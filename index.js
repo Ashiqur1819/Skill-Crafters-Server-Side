@@ -25,12 +25,16 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const serviceCollection = client
       .db("SkillCraftersDB")
       .collection("services");
+    const bookedServiceCollection = client
+      .db("SkillCraftersDB")
+      .collection("bookedServices");
 
+    // ================ serviceCollection api's ===================
     // get all services
     app.get("/services", async (req, res) => {
       const cursor = serviceCollection.find();
@@ -46,10 +50,26 @@ async function run() {
       res.send(result);
     });
 
-    // Post single single
+    // Post single service
     app.post("/services", async (req, res) => {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
+      res.send(result);
+    });
+
+    
+    //======================== bookedServiceCollection api's =======================
+    // get all services
+    app.get("/booked_services", async (req, res) => {
+      const cursor = bookedServiceCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // Post single service
+    app.post("/booked_services", async (req, res) => {
+      const service = req.body;
+      const result = await bookedServiceCollection.insertOne(service);
       res.send(result);
     });
 
