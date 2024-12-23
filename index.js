@@ -57,16 +57,23 @@ async function run() {
       res.send(result);
     });
 
-    
     //======================== bookedServiceCollection api's =======================
-    // get all services
+    // get all bookedservices
     app.get("/booked_services", async (req, res) => {
       const cursor = bookedServiceCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    // Post single service
+    // get single bookedservice
+    app.get("/booked_services/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await bookedServiceCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Post single bookedservice
     app.post("/booked_services", async (req, res) => {
       const service = req.body;
       const result = await bookedServiceCollection.insertOne(service);
@@ -74,10 +81,10 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -91,5 +98,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log("The server running successfully on port:", port)
+    // console.log("The server running successfully on port:", port)
 })
