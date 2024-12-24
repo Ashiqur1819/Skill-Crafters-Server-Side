@@ -50,10 +50,49 @@ async function run() {
       res.send(result);
     });
 
+    // get all services posted by a specific user
+    app.get("/service/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { providerEmail: email };
+      const result = await serviceCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // Post single service
     app.post("/services", async (req, res) => {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
+      res.send(result);
+    });
+
+    // Update service
+    app.put("/services/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const service = req.body;
+      const updatedService = {
+        $set: {
+          serviceImage: service.serviceImage,
+          serviceName: service.serviceName,
+          price: service.price,
+          serviceArea: service.serviceArea,
+          description: service.description,
+        },
+      };
+      const result = await serviceCollection.updateOne(
+        filter,
+        updatedService,
+        options
+      );
+      res.send(result);
+    });
+
+    // Delete service
+    app.delete("/services/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await serviceCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -76,6 +115,12 @@ async function run() {
     // Post single bookedservice
     app.post("/booked_services", async (req, res) => {
       const service = req.body;
+      const query = { userEmail: service.userEmail, serviceId: service.serviceId };
+      const alreadyExist = await bookedServiceCollection.findOne(query);
+      if (alreadyExist)
+        return res
+          .status(400)
+          .send("You have already booked this service!");
       const result = await bookedServiceCollection.insertOne(service);
       res.send(result);
     });
