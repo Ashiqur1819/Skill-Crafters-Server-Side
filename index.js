@@ -37,10 +37,24 @@ async function run() {
     // ================ serviceCollection api's ===================
     // get all services
     app.get("/services", async (req, res) => {
-      const cursor = serviceCollection.find();
+      const search = req.query.search;
+      let query = {
+        serviceName: { $regex: search, $options: "i" },
+      };
+      const cursor = serviceCollection.find(query).limit(6);
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    // app.get("all-services", async(req, res) => {
+    //   const search = req.query.search;
+    //   let query = {title: {
+    //     $regex: search, $options: "i"
+    //   }}
+    //   const result = await serviceCollection.find(query).toArray()
+    //   res.send(result)
+
+    // })
 
     // get single service
     app.get("/services/:id", async (req, res) => {
