@@ -46,6 +46,9 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    // Connect the client to the server	(optional starting in v4.7)
+    // await client.connect();
+
     const serviceCollection = client
       .db("SkillCraftersDB")
       .collection("services");
@@ -60,17 +63,19 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
+          maxAge: 3600 * 1000,
           secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
     });
 
-    app.post("/logout", (req, res) => {
+    app.post("/logout", async (req, res) => {
       res
         .clearCookie("token", {
           httpOnly: true,
-          secure: false,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
     });
@@ -107,19 +112,22 @@ async function run() {
     app.get("/service/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { providerEmail: email };
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: "Forbidden Access!" });
+      }
       const result = await serviceCollection.find(query).toArray();
       res.send(result);
     });
 
     // Post single service
-    app.post("/services", verifyToken, async (req, res) => {
+    app.post("/services", async (req, res) => {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
       res.send(result);
     });
 
     // Update service
-    app.put("/services/:id", verifyToken, async (req, res) => {
+    app.put("/services/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -142,7 +150,7 @@ async function run() {
     });
 
     // Delete service
-    app.delete("/services/:id", verifyToken, async (req, res) => {
+    app.delete("/services/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await serviceCollection.deleteOne(query);
@@ -151,13 +159,13 @@ async function run() {
 
     //======================== bookedServiceCollection api's =======================
     // get all bookedservices
-    app.get("/booked_services", async (req, res) => {
+    app.get("/booked_services", verifyToken, async (req, res) => {
       const cursor = bookedServiceCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    // get single bookedservice
+    // get single bookedservice for specific user
     app.get("/booked_services/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email };
@@ -168,8 +176,19 @@ async function run() {
       res.send(result);
     });
 
+    // get single bookedservice for specific user
+    app.get("/booked-services/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { providerEmail: email };
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: "Forbidden Access!" });
+      }
+      const result = await bookedServiceCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // Post single bookedservice
-    app.post("/booked_services", verifyToken, async (req, res) => {
+    app.post("/booked_services", async (req, res) => {
       const service = req.body;
       const query = {
         userEmail: service.userEmail,
@@ -181,7 +200,15 @@ async function run() {
       const result = await bookedServiceCollection.insertOne(service);
       res.send(result);
     });
+
+    // Send a ping to confirm a successful connection
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
+    // Ensures that the client will close when you finish/error
+    // await client.close();
   }
 }
 run().catch(console.dir);
@@ -190,4 +217,6 @@ app.get("/", (req, res) => {
   res.send("The server running successfully!");
 });
 
-app.listen(port);
+app.listen(port, () => {
+  // console.log("The server running successfully on port:", port)
+});
