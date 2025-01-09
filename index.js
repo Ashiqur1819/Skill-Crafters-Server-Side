@@ -180,9 +180,6 @@ async function run() {
     app.get("/booked-services/:email", async (req, res) => {
       const email = req.params.email;
       const query = { providerEmail: email };
-      if (req.user.email !== req.params.email) {
-        return res.status(403).send({ message: "Forbidden Access!" });
-      }
       const result = await bookedServiceCollection.find(query).toArray();
       res.send(result);
     });
@@ -200,6 +197,19 @@ async function run() {
       const result = await bookedServiceCollection.insertOne(service);
       res.send(result);
     });
+
+    app.patch("/status-update/:id",  async(req, res) => {
+      const id = req.params.id
+      const status = req.body
+      const filter = {_id : new ObjectId(id)}
+      const updated = {
+        $set: {
+          serviceStatus: status,
+        },
+      };
+      const result =  bookedServiceCollection.find(filter,updated)
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
