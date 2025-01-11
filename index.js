@@ -84,18 +84,14 @@ async function run() {
 
     // get all services
     app.get("/services", async (req, res) => {
-      const cursor = serviceCollection.find().limit(6);
+      const cursor = serviceCollection.find().limit(8);
       const result = await cursor.toArray();
       res.send(result);
     });
 
     // get all services by query
     app.get("/all-services", async (req, res) => {
-      const search = req.query.search;
-      let query = {
-        serviceName: { $regex: `${search}`, $options: "i" },
-      };
-      const cursor = serviceCollection.find(query);
+      const cursor = serviceCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -159,7 +155,7 @@ async function run() {
 
     //======================== bookedServiceCollection api's =======================
     // get all bookedservices
-    app.get("/booked_services", verifyToken, async (req, res) => {
+    app.get("/booked_services", async (req, res) => {
       const cursor = bookedServiceCollection.find();
       const result = await cursor.toArray();
       res.send(result);
@@ -198,18 +194,19 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/status-update/:id",  async(req, res) => {
-      const id = req.params.id
-      const status = req.body
-      const filter = {_id : new ObjectId(id)}
+    app.patch("/status-update/:id", async (req, res) => {
+      const id = req.params.id;
+      const { status } = req.body;
+      console.log(status);
+      const filter = { _id: new ObjectId(id) };
       const updated = {
         $set: {
           serviceStatus: status,
         },
       };
-      const result =  bookedServiceCollection.find(filter,updated)
-      res.send(result)
-    })
+      const result = await bookedServiceCollection.updateOne(filter, updated);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
